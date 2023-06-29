@@ -2,8 +2,12 @@ import os
 import pandas as pd
 import re
 import numpy as np
+from datetime import datetime
 
-df_sites = pd.read_excel('Data/פילוחי אתרים - להשלים מידע.xlsx')
+folder_path = "Data" #"path/to/your/folder"
+
+filepath = os.path.join(folder_path, 'פילוחי אתרים - להשלים מידע.xlsx')
+df_sites = pd.read_excel(filepath)
 df_sites = df_sites.rename(columns={'מחוז':'district',
                                     'שם אתר':'site_name',
                                     'גן או שמורה': 'park_or_reserve',
@@ -18,36 +22,30 @@ df_sites = df_sites.rename(columns={'מחוז':'district',
 
 print ('Site data imported')
 
-folder_path = "Data" #"path/to/your/folder"
 
 # Get the list of files in the folder
 file_list = os.listdir(folder_path)
 
-# Create a DataFrame from the file list
-file_df = pd.DataFrame(file_list, columns=["file_name"])
+# Initialize an empty list to store the dataframes
+dataframes = []
 
-# Add columns with year list
-file_df['file_year'] = file_df['file_name'].apply(lambda x: re.search(r'\d{4}',x).group() if re.search(r"\d{4}", x) else "N/A")
-file_df = file_df[lambda x: x['file_year'] != 'N/A']
+for i, filename in enumerate(file_list):
+    if filename.endswith('.xlsx') and filename != 'פילוחי אתרים - להשלים מידע.xlsx':
+        # Read the Excel file into a dataframe
+        filepath = os.path.join(folder_path, filename)
+        df = pd.read_excel(filepath)
 
+        # Extract the year from the filename and add it as a new column
+        year = filename.split(' - ')[0].split('.')[-1]
+        df['Year'] = year
 
-df_year = {}
+        # Append the dataframe to the list
+        dataframes.append(df)
 
-print('importing visit data')
-# Import the files from the folder
-for i,file_name in enumerate(file_df["file_name"]):
-    file_path = folder_path + "/" + file_name
-    year = re.search(r"\d{4}", file_name).group()
-    df_year[year] = pd.read_excel(file_path)
-    print(f'{100*i/len(file_df["file_name"])} %')
+        print(f'{100 * i / len(file_list)-1} %')
 
+df_visits = pd.concat(dataframes, ignore_index=True)
 
-# Combine data frames and add a "Year" column
-df_visits = pd.concat(df_year.values())
-df_visits['year'] = pd.concat([pd.Series([year]*len(df)) for year, df in df_year.items()])
-
-# Reset the index of the combined data frame
-df_visits = df_visits.reset_index(drop=True)
 
 # Rename columns combined data frame
 df_visits = df_visits.rename(columns={'אתר(ID)': 'site_id',
@@ -57,6 +55,16 @@ df_visits = df_visits.rename(columns={'אתר(ID)': 'site_id',
                                           'SPEC7': 'visitor_type',
                                           'כמות': 'num_of_visitors',
                                           'תאריך': 'visit_date'})
+
+# Add Formatted column
+df_visits['visit_date_fmt'] = pd.to_datetime(df_visits['visit_date'])
+
+# Extract month as a new column
+df_visits['Month'] = df_visits['visit_date_fmt'].dt.month
+
+# Extract day of the week as a new column
+df_visits['DayOfWeek'] = df_visits['visit_date_fmt'].dt.day_name()
+
 
 
 print ('visit data imported')
