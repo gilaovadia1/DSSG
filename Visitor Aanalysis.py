@@ -3,15 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df_visits.columns
-
-combined_df[['visitor_code', 'visitor_type']].drop_duplicates()
 
 # filter 'סכום'
 df_visits = df_visits[lambda x: x['visitor_code'] != 105]
 
 
-def barplot (x,y,label, title):
+def barplot (x,y,label, title, rotate=0):
     # Create the grid
     fig, ax = plt.subplots(figsize=(7, 3.5), dpi=96)
     bar1 = ax.bar(x, y, width=0.6)
@@ -27,6 +24,7 @@ def barplot (x,y,label, title):
     ax.xaxis.set_tick_params(pad=2, labelbottom=True, bottom=True, labelsize=12, labelrotation=0)
     labels = label
     ax.set_xticks(x, labels)  # Map integers numbers from the series to labels list
+    plt.xticks(rotation=rotate)
 
     # Reformat y-axis
     ax.set_ylabel('Number of Visitors (1,000)', fontsize=12, labelpad=10)
@@ -86,17 +84,27 @@ barplot (x=day_counts_sorted.index,
 df_visits_2022 = df_visits[lambda x: x['Year'] == '2022']
 grouped_visits = df_visits_2022.groupby('site_name')['num_of_visitors'].sum()
 
-top_15_sites = grouped_visits.sort_values(ascending=False).head(10)
+top_15_sites = grouped_visits.sort_values(ascending=False).head(15)
 inverted_label = [string[::-1] for string in top_15_sites.index.tolist()]
+inverted_label[9] = 'םילשורי תומוח'
 
 
 barplot(x=top_15_sites.index,
         y=top_15_sites.values/1000,
         label=inverted_label,
-        title='15 Most Popular Sited of 2022 ')
+        title='15 Most Popular Sited of 2022',
+        rotate=45)
 
 # endregion
 
 # region << Extreme Values >>
+sns.boxplot(data=df_visits['num_of_visitors'])
 
+plt.hist(df_visits['num_of_visitors'], bins=30, edgecolor='black')
+
+plt.xlabel('Value')
+plt.ylabel('Frequency')
+plt.title('Histogram of Data')
+
+plt.show()
 # endregion
